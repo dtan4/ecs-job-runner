@@ -5,5 +5,9 @@
   "main": "index.js",
   "repository": "https://github.com/dtan4/ecs-job-runner",
   "author": "Daisuke Fujita <dtanshi45@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^3.17.1",
+    "eslint-plugin-node": "^4.2.0"
+  }
 }
