@@ -1,0 +1,6 @@
+{
+  "cluster": "sample-cluster",
+  "command": ["ruby", "-v"],
+  "container": "job",
+  "taskDefinition": "sample-task-definition"
+}
