@@ -1,0 +1,9 @@
+{
+  "name": "ecs-job-runner",
+  "version": "1.0.0",
+  "description": "Run a job on ECS using CloudWatch Events -> Lambda",
+  "main": "index.js",
+  "repository": "https://github.com/dtan4/ecs-job-runner",
+  "author": "Daisuke Fujita <dtanshi45@gmail.com>",
+  "license": "MIT"
+}
