@@ -1,6 +1,11 @@
 'use strict';
 
-const REQUIRED_KEYS = ['cluster', 'taskDefinition', 'commands'];
+const REQUIRED_KEYS = [
+  'cluster',
+  'command',
+  'container',
+  'taskDefinition',
+];
 
 let AWS = require('aws-sdk');
 let ecs = new AWS.ECS();
@@ -26,14 +31,28 @@ exports.handler = (event, context, callback) => {
   }
 
   let cluster = event['cluster'];
+  let command = event['command'];
+  let container = event['container'];
   let taskDefinition = event['taskDefinition'];
-  let commands = event['commands'];
 
-  console.log(ecs);
   console.log('cluster: ' + cluster);
   console.log('taskDefinition: ' + taskDefinition);
-  console.log('commands: ' + commands);
+  console.log('command: ' + command);
 
-  console.log(event);
-  callback(null, 'ok');
+  ecs.runTask({
+    cluster: cluster,
+    taskDefinition: taskDefinition,
+    overrides: {
+      containerOverrides: [
+        {
+          command: command,
+          name: container,
+        },
+      ],
+    },
+  }).promise().then(_ => {
+    callback(null, "SUCCESS");
+  }).catch(err => {
+    callback(err);
+  });
 };
