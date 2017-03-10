@@ -1,0 +1,8 @@
+{
+  "name": "ecs-job-runner",
+  "description": "Run a job on ECS using CloudWatch Events -> Lambda",
+  "memory": 128,
+  "timeout": 5,
+  "role": "TODO: Your IAM role here",
+  "environment": {}
+}
