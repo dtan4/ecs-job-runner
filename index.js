@@ -11,6 +11,13 @@ let AWS = require('aws-sdk');
 let dynamodb = new AWS.DynamoDB();
 let ecs = new AWS.ECS();
 
+function toUnixTimestampWithoutSeconds(timestamp) {
+  let d = new Date(timestamp);
+  d.setSeconds(0);
+
+  return d.getTime().toString();
+}
+
 function validateEvent(event) {
   let missingKeys = [];
 
@@ -62,7 +69,7 @@ exports.handler = (event, context, callback) => {
 
   let tableName = process.env.DYNAMODB_TABLENAME;
   let arn = event['arn'];
-  let timestamp = event['timestamp'];
+  let timestamp = toUnixTimestampWithoutSeconds(event['timestamp']);
 
   let missingKeys = validateEvent(event);
 
