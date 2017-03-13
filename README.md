@@ -42,7 +42,7 @@ Run a job on ECS using CloudWatch Events -> Lambda
 
 |key|description|required|
 |---|---|---|
-|`DYNAMODB_TABLENAME`|DynamoDB table name for lock manager|`SchedulerLockManager`|
+|`DYNAMODB_TABLENAME`|DynamoDB table name for lock manager|required|
 
 ### Input event JSON
 
