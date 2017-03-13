@@ -22,6 +22,21 @@ function validateEvent(event) {
   return missingKeys;
 }
 
+function runTask(cluster, taskDefinition, command, container) {
+  return ecs.runTask({
+    cluster: cluster,
+    taskDefinition: taskDefinition,
+    overrides: {
+      containerOverrides: [
+        {
+          command: command,
+          name: container,
+        },
+      ],
+    },
+  }).promise();
+}
+
 exports.handler = (event, context, callback) => {
   let missingKeys = validateEvent(event);
 
@@ -39,18 +54,7 @@ exports.handler = (event, context, callback) => {
   console.log('taskDefinition: ' + taskDefinition);
   console.log('command: ' + command);
 
-  ecs.runTask({
-    cluster: cluster,
-    taskDefinition: taskDefinition,
-    overrides: {
-      containerOverrides: [
-        {
-          command: command,
-          name: container,
-        },
-      ],
-    },
-  }).promise().then(_ => {
+  runTask(cluster, taskDefinition, command, container).then(_ => {
     callback(null, "SUCCESS");
   }).catch(err => {
     callback(err);
