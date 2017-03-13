@@ -92,6 +92,10 @@ exports.handler = (event, context, callback) => {
   }).then(_ => {
     callback(null, "SUCCESS");
   }).catch(err => {
-    callback(err);
+    if (err.code == 'ConditionalCheckFailedException') {
+      callback('duplicated execution: ' + JSON.stringify(event));
+    } else {
+      callback(err);
+    }
   });
 };
