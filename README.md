@@ -57,6 +57,8 @@ Run a job on ECS using CloudWatch Events -> Lambda
 
 |key|value|
 |---|---|
+|`arn`|CloudWatch Events Rule ARN|
+|`timestamp`|Timestamp when the event invoked|
 |`cluster`|ECS cluster name|
 |`command`|Command to execute as job (= `CMD` in `Dockerfile`)|
 |`container`|Container name to use|
