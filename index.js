@@ -8,7 +8,15 @@ const REQUIRED_KEYS = [
 ];
 
 let AWS = require('aws-sdk');
+let dynamodb = new AWS.DynamoDB();
 let ecs = new AWS.ECS();
+
+function toUnixTimestampWithoutSeconds(timestamp) {
+  let d = new Date(timestamp);
+  d.setSeconds(0);
+
+  return d.getTime().toString();
+}
 
 function validateEvent(event) {
   let missingKeys = [];
@@ -20,6 +28,22 @@ function validateEvent(event) {
   });
 
   return missingKeys;
+}
+
+function acquireSemaphore(tableName, arn, invokedAt) {
+  return dynamodb.updateItem({
+    Key: {
+      ARN: {
+        S: arn,
+      },
+    },
+    TableName: tableName,
+    ConditionExpression: 'NOT InvokedAt = :invokedAt',
+    UpdateExpression: 'SET InvokedAt = :invokedAt',
+    ExpressionAttributeValues: {
+      ":invokedAt": { S: invokedAt },
+    },
+  }).promise();
 }
 
 function runTask(cluster, taskDefinition, command, container) {
@@ -38,6 +62,15 @@ function runTask(cluster, taskDefinition, command, container) {
 }
 
 exports.handler = (event, context, callback) => {
+  if (process.env.DYNAMODB_TABLENAME == undefined) {
+    callback('env DYNAMODB_TABLENAME is required');
+    return;
+  }
+
+  let tableName = process.env.DYNAMODB_TABLENAME;
+  let arn = event['arn'];
+  let timestamp = toUnixTimestampWithoutSeconds(event['timestamp']);
+
   let missingKeys = validateEvent(event);
 
   if (missingKeys.length > 0) {
@@ -54,9 +87,15 @@ exports.handler = (event, context, callback) => {
   console.log('taskDefinition: ' + taskDefinition);
   console.log('command: ' + command);
 
-  runTask(cluster, taskDefinition, command, container).then(_ => {
+  acquireSemaphore(tableName, arn, timestamp).then(_ => {
+    return runTask(cluster, taskDefinition, command, container);
+  }).then(_ => {
     callback(null, "SUCCESS");
   }).catch(err => {
-    callback(err);
+    if (err.code == 'ConditionalCheckFailedException') {
+      callback('duplicated execution: ' + JSON.stringify(event));
+    } else {
+      callback(err);
+    }
   });
 };

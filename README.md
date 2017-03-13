@@ -6,12 +6,19 @@ Run a job on ECS using CloudWatch Events -> Lambda
 
 ### Required IAM Policy for function
 
-`ecs:RunTask` must be authorized.
+`dynamodb:UpdateItem` for Lock manager table and `ecs:RunTask` must be authorized.
 
 ```json
 {
   "Version": "2012-10-17",
   "Statement": [
+    {
+      "Action": [
+        "dynamodb:UpdateItem"
+      ],
+      "Effect": "Allow",
+      "Resource": "arn:aws:dynamodb:ap-northeast-1:123456789012:table/SchedulerLockManager"
+    },
     {
       "Action": [
         "ecs:RunTask"
@@ -22,6 +29,20 @@ Run a job on ECS using CloudWatch Events -> Lambda
   ]
 }
 ```
+
+### Required DynamoDB table
+
+#### Lock manager (e,g. `SchedulerLockManager`)
+
+|key|type|
+|---|---|
+|ARN|string|
+
+### Function environment variables
+
+|key|description|required|
+|---|---|---|
+|`DYNAMODB_TABLENAME`|DynamoDB table name for lock manager|required|
 
 ### Input event JSON
 
@@ -36,6 +57,8 @@ Run a job on ECS using CloudWatch Events -> Lambda
 
 |key|value|
 |---|---|
+|`arn`|CloudWatch Events Rule ARN|
+|`timestamp`|Timestamp when the event invoked|
 |`cluster`|ECS cluster name|
 |`command`|Command to execute as job (= `CMD` in `Dockerfile`)|
 |`container`|Container name to use|
