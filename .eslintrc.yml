@@ -14,3 +14,6 @@ rules:
   no-unused-vars:
     - 2
     - argsIgnorePattern: ^_
+  quotes:
+    - error
+    - single

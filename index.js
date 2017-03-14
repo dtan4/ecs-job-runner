@@ -41,7 +41,7 @@ function acquireSemaphore(tableName, arn, invokedAt) {
     ConditionExpression: 'NOT InvokedAt = :invokedAt',
     UpdateExpression: 'SET InvokedAt = :invokedAt',
     ExpressionAttributeValues: {
-      ":invokedAt": { S: invokedAt },
+      ':invokedAt': { S: invokedAt },
     },
   }).promise();
 }
@@ -90,7 +90,7 @@ exports.handler = (event, context, callback) => {
   acquireSemaphore(tableName, arn, timestamp).then(_ => {
     return runTask(cluster, taskDefinition, command, container);
   }).then(_ => {
-    callback(null, "SUCCESS");
+    callback(null, 'SUCCESS');
   }).catch(err => {
     if (err.code == 'ConditionalCheckFailedException') {
       callback('duplicated execution: ' + JSON.stringify(event));
