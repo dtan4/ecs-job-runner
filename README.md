@@ -59,7 +59,8 @@ The actions described below must be authorized
 
 |key|description|required|
 |---|---|---|
-|`DYNAMODB_TABLENAME`|DynamoDB table name for lock manager|required|
+|`DYNAMODB_LOCKMANAGER_TABLE`|DynamoDB table name for lock manager|required|
+|`DYNAMODB_TASKS_TABLE`|DynamoDB table name for tasks|required|
 
 ### Input event JSON
 
