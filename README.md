@@ -6,12 +6,23 @@ Run a job on ECS using CloudWatch Events -> Lambda
 
 ### Required IAM Policy for function
 
-`dynamodb:UpdateItem` for Lock manager table and `ecs:RunTask` must be authorized.
+The below actions must be authorized
+
+- `dynamodb:Query` for Task table
+- `dynamodb:UpdateItem` for Lock manager table
+- `ecs:RunTask` for ECS cluster where job container runs
 
 ```json
 {
   "Version": "2012-10-17",
   "Statement": [
+    {
+      "Action": [
+        "dynamodb:Query"
+      ],
+      "Effect": "Allow",
+      "Resource": "arn:aws:dynamodb:ap-northeast-1:123456789012:table/SchedulerTasks"
+    },
     {
       "Action": [
         "dynamodb:UpdateItem"
@@ -38,6 +49,12 @@ Run a job on ECS using CloudWatch Events -> Lambda
 |---|---|
 |ARN|string|
 
+#### Task table (e,g. `SchedulerTasks`)
+
+|key|type|
+|---|---|
+|ARN|string|
+
 ### Function environment variables
 
 |key|description|required|
@@ -46,23 +63,23 @@ Run a job on ECS using CloudWatch Events -> Lambda
 
 ### Input event JSON
 
+Please select `Matched event` as CloudWatch Events Rules target (Lamdbda function) input.
+
 ```json
 {
-  "cluster": "sample-cluster",
-  "command": ["ruby", "-v"],
-  "container": "job",
-  "taskDefinition": "sample-task-definition"
+  "version": "0",
+  "id": "89d1a02d-5ec7-412e-82f5-13505f849b41",
+  "detail-type": "Scheduled Event",
+  "source": "aws.events",
+  "account": "123456789012",
+  "time": "2016-12-30T18:44:49Z",
+  "region": "us-east-1",
+  "resources": [
+    "arn:aws:events:us-east-1:123456789012:rule/SampleRule"
+  ],
+  "detail": {}
 }
 ```
-
-|key|value|
-|---|---|
-|`arn`|CloudWatch Events Rule ARN|
-|`timestamp`|Timestamp when the event invoked|
-|`cluster`|ECS cluster name|
-|`command`|Command to execute as job (= `CMD` in `Dockerfile`)|
-|`container`|Container name to use|
-|`taskDefinition`|ECS task definition name|
 
 ## Author
 
