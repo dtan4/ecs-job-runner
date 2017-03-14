@@ -7,6 +7,7 @@
   "author": "Daisuke Fujita <dtanshi45@gmail.com>",
   "license": "MIT",
   "scripts": {
+    "deploy": "node build.js && node deploy.js",
     "dist": "rm -fr dist; mkdir dist; node build.js",
     "lint": "eslint *.js",
     "test": "echo \"Error: no test specified\" && exit 1"
