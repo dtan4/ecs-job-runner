@@ -1,12 +1,5 @@
 'use strict';
 
-const REQUIRED_KEYS = [
-  'cluster',
-  'command',
-  'container',
-  'taskDefinition',
-];
-
 let AWS = require('aws-sdk');
 let dynamodb = new AWS.DynamoDB();
 let ecs = new AWS.ECS();
@@ -16,18 +9,6 @@ function toUnixTimestampWithoutSeconds(timestamp) {
   d.setSeconds(0);
 
   return d.getTime().toString();
-}
-
-function validateEvent(event) {
-  let missingKeys = [];
-
-  REQUIRED_KEYS.forEach(key => {
-    if (event[key] == null) {
-      missingKeys.push(key);
-    }
-  });
-
-  return missingKeys;
 }
 
 function acquireSemaphore(tableName, arn, invokedAt) {
@@ -42,6 +23,20 @@ function acquireSemaphore(tableName, arn, invokedAt) {
     UpdateExpression: 'SET InvokedAt = :invokedAt',
     ExpressionAttributeValues: {
       ':invokedAt': { S: invokedAt },
+    },
+  }).promise();
+}
+
+function taskFromARN(tableName, arn) {
+  return dynamodb.query({
+    TableName: tableName,
+    KeyConditions: {
+      'ARN': {
+        ComparisonOperator: 'EQ',
+        AttributeValueList: [
+          { S: arn },
+        ],
+      },
     },
   }).promise();
 }
@@ -62,32 +57,36 @@ function runTask(cluster, taskDefinition, command, container) {
 }
 
 exports.handler = (event, context, callback) => {
-  if (process.env.DYNAMODB_TABLENAME == undefined) {
-    callback('env DYNAMODB_TABLENAME is required');
+  if (process.env.DYNAMODB_LOCKMANAGER_TABLE == undefined) {
+    callback('env DYNAMODB_LOCKMANAGER_TABLE is required');
     return;
   }
+  let lockManagerTable = process.env.DYNAMODB_LOCKMANAGER_TABLE;
 
-  let tableName = process.env.DYNAMODB_TABLENAME;
-  let arn = event['arn'];
-  let timestamp = toUnixTimestampWithoutSeconds(event['timestamp']);
-
-  let missingKeys = validateEvent(event);
-
-  if (missingKeys.length > 0) {
-    callback('missing keys: ' + missingKeys.toString());
+  if (process.env.DYNAMODB_TASKS_TABLE == undefined) {
+    callback('env DYNAMODB_TASKS_TABLE is required');
     return;
   }
+  let tasksTable = process.env.DYNAMODB_TASKS_TABLE;
 
-  let cluster = event['cluster'];
-  let command = event['command'];
-  let container = event['container'];
-  let taskDefinition = event['taskDefinition'];
+  let arn = event['resources'][0];
+  let timestamp = toUnixTimestampWithoutSeconds(event['time']);
 
-  console.log('cluster: ' + cluster);
-  console.log('taskDefinition: ' + taskDefinition);
-  console.log('command: ' + command);
+  acquireSemaphore(lockManagerTable, arn, timestamp).then(_ => {
+    return taskFromARN(tasksTable, arn);
+  }).then(resp => {
+    if (resp.Items.length == 0) {
+      return new Promise((_, reject) => {
+        reject('event matched to ' + arn + ' is not found');
+      });
+    }
 
-  acquireSemaphore(tableName, arn, timestamp).then(_ => {
+    let task = resp.Items[0];
+    let cluster = task['Cluster']['S'];
+    let taskDefinition = task['TaskDefinition']['S'];
+    let command = task['Command']['SS'].reverse();
+    let container = task['Container']['S'];
+
     return runTask(cluster, taskDefinition, command, container);
   }).then(_ => {
     callback(null, 'SUCCESS');
