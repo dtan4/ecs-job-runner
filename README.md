@@ -6,7 +6,7 @@ Run a job on ECS using CloudWatch Events -> Lambda
 
 ### Required IAM Policy for function
 
-The below actions must be authorized
+The actions described below must be authorized
 
 - `dynamodb:Query` for Task table
 - `dynamodb:UpdateItem` for Lock manager table
